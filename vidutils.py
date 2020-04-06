@@ -21,7 +21,7 @@ def extract_frames(video_path, frame_path, n_frames = 16):
     frame_total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
     # Get N frames from video
-    wanted_frames = np.linspace(0, frame_total - 1, n_frames, dtype = np.int16)
+    wanted_frames = np.linspace(1, frame_total - 1, n_frames, dtype = np.int16)
 
     # Read each frame
     frame_count = 0
