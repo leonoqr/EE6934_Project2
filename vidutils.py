@@ -21,7 +21,16 @@ def extract_frames(video_path, frame_path, n_frames = 16):
     frame_total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
     # Get N frames from video
-    wanted_frames = np.linspace(1, frame_total - 1, n_frames, dtype = np.int16)
+    if n_frames < 0:
+        wanted_frames = range(frame_total)
+    else:
+        wanted_frames = np.linspace(0, frame_total - 1, n_frames, dtype = np.int16)
+
+    # Get number of frames per second
+    fps = cap.get(cv2.CAP_PROP_FPS)
+
+    # a timeline is essentially a mapping from a frame index to time in seconds
+    timeline = []
 
     # Read each frame
     frame_count = 0
@@ -39,9 +48,15 @@ def extract_frames(video_path, frame_path, n_frames = 16):
             fname = frame_path + '/frame' + str(frame_count) + '.jpg'
             cv2.imwrite(fname, frame)
 
+            timeline.append(frame_idx/fps)
+
             frame_count += 1
 
     cap.release()
+
+    # saving the constructed timeline to file
+    np.savez(frame_path + '/timeline.npz', timeline = np.array(timeline))
+
     return
 
 def extract_pose_features_multi(frame_path):
