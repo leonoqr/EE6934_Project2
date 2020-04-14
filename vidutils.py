@@ -24,7 +24,7 @@ def extract_frames(video_path, frame_path, n_frames = 16):
     if n_frames < 0:
         wanted_frames = range(frame_total)
     else:
-        wanted_frames = np.linspace(0, frame_total - 1, n_frames, dtype = np.int16)
+        wanted_frames = np.linspace(1, frame_total - 1, n_frames, dtype = np.int16)
 
     # Get number of frames per second
     fps = cap.get(cv2.CAP_PROP_FPS)
@@ -59,7 +59,7 @@ def extract_frames(video_path, frame_path, n_frames = 16):
 
     return
 
-def extract_pose_features_multi(frame_path):
+def extract_pose_features_multi(frame_path, num_frames):
     '''
     Extract numpy feature array from 1 frame folder and save it in a file. 
     Feature Array has a shape of (n_frames, 168)
@@ -71,8 +71,27 @@ def extract_pose_features_multi(frame_path):
     frames = os.listdir(frame_path)
     #print(len(frames))
     
+    # Reorder the frames because the file names have confused them
+    ordered_frames = [None] * num_frames # frame count
+    f_count = 0
+    for frame_cand in frames:
+        if '.jpg' not in frame_cand:
+            continue
+        else: 
+            idx = int(frame_cand.replace("frame", "")[0:-4])
+            ordered_frames[idx] = frame_cand
+            f_count += 1
+    
+    # If: < n_frames, duplicate the last frame
+    if f_count < num_frames:
+        print("*"*10)
+        print("Warning: Frames less than {}. Duplicating.".format(num_frames))
+        print("*"*10)
+        for idx in range((num_frames-f_count)):
+            ordered_frames[f_count + idx] = ordered_frames[f_count - 1]
+    
     # Extract features for each frame
-    for frame in frames:
+    for frame in ordered_frames:
         f_path = os.path.join(frame_path, frame)
         frame_features = extract_pose_features(f_path)
 
@@ -101,34 +120,55 @@ def extract_pose_features(frame_path):
     frame_img = cv2.imread(frame_path)
 
     # Body Estimation 
-    candidate, subset = body_estimation(frame_img)
+    try: 
+        candidate, subset = body_estimation(frame_img)
+        person_count = subset.shape[0]
+    except: 
+        print("Warning: OpenPose failed. Adding row of -1's")
+        person_count = 0
 
-    # Just get the first 3 people in subset - might need to improve this
-    for person_idx in range(3):
+    # Just get the first 3 people in subset
+    for person_idx in range(min(person_count,3)):
 
         person = subset[person_idx]
-    
+
         for point_idx in range(len(person)):
             #print("point_idx: " + str(person[point_idx]))
-            
+
             if point_idx < 18:
                 candidate_idx = int(person[point_idx])
                 #print("candidate point #" + str(candidate_idx))
-                
+
                 point_coord = np.ones((3,))
-                
+
                 if candidate_idx < 0:
                     #print("Occluded")
                     point_coord = point_coord * -1
                 else:
                     point_coord = candidate[candidate_idx,:3]
                     #print(point_coord)
-                    
+
                 #print(point_coord)
                 feature_array = np.hstack((feature_array, point_coord))
             else:
                 # Add score and total parts 
                 #print(person[point_idx])
                 feature_array = np.hstack((feature_array, person[point_idx]))
+                
+    # Handle case where OpenPose does not detect people - just use "-1" for the entire thing
+    
+    if person_count < 3 and len(feature_array) != 168:
+        
+        # Get the number of people missing
+        num_missing = 3 - person_count
+        
+        print('*'*10)
+        print("Warning: OpenPose recognizes {}/3 people in frame. Adding missing data.".format(person_count))
+        print(frame_path)
+        print('*'*10)
+        
+        # Insert array of -1 for the missing data and ensure feature array is the correct size
+        missing_data = np.ones((num_missing*56,)) * -1
+        feature_array = np.hstack((feature_array, missing_data))
 
     return feature_array
