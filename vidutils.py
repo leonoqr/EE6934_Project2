@@ -172,3 +172,75 @@ def extract_pose_features(frame_path):
         feature_array = np.hstack((feature_array, missing_data))
 
     return feature_array
+
+def reshape_syn_features(subset_all, candidate_all):
+    '''
+    Reshape features from those already extracted from openpose. 
+    Subset and candidate should already be in a list of results per frame.
+    Feature Array is a numpy array shaped (1, 168)
+    '''
+
+    total_features = []
+    for frame in range(len(candidate_all)):
+        subset = subset_all[frame]
+        candidate = candidate_all[frame]
+
+        # Body Estimation 
+        feature_array = []
+        try: 
+            person_count = subset.shape[0]
+        except: 
+            print("Warning: OpenPose failed. Adding row of -1's")
+            person_count = 0
+
+        # Just get the first 3 people in subset
+        for person_idx in range(min(person_count,3)):
+
+            person = subset[person_idx]
+
+            for point_idx in range(len(person)):
+                #print("point_idx: " + str(person[point_idx]))
+
+                if point_idx < 18:
+                    candidate_idx = int(person[point_idx])
+                    #print("candidate point #" + str(candidate_idx))
+
+                    point_coord = np.ones((3,))
+
+                    if candidate_idx < 0:
+                        #print("Occluded")
+                        point_coord = point_coord * -1
+                    else:
+                        point_coord = candidate[candidate_idx,:3]
+                        #print(point_coord)
+
+                    #print(point_coord)
+                    feature_array = np.hstack((feature_array, point_coord))
+                else:
+                    # Add score and total parts 
+                    #print(person[point_idx])
+                    feature_array = np.hstack((feature_array, person[point_idx]))
+                    
+        # Handle case where OpenPose does not detect people - just use "-1" for the entire thing
+        
+        if person_count < 3 and len(feature_array) != 168:
+            
+            # Get the number of people missing
+            num_missing = 3 - person_count
+            
+            print('*'*10)
+            print("Warning: OpenPose recognizes {}/3 people in frame. Adding missing data.".format(person_count))
+            print(frame_path)
+            print('*'*10)
+            
+            # Insert array of -1 for the missing data and ensure feature array is the correct size
+            missing_data = np.ones((num_missing*56,)) * -1
+            feature_array = np.hstack((feature_array, missing_data))
+    
+        # append to total features list
+        if len(total_features) == 0:
+            total_features = feature_array
+        else:
+            total_features = np.vstack((total_features, feature_array))
+
+    return total_features
