@@ -16,7 +16,9 @@ We propose the following methodology:
 4.	Estimate pose synchronicity analysing time difference between extrema of angular acceleration of each limb.
 
 The workflow is visualized below and will occur in 3 stages.
-![alt text][./images/workflow.png]
+
+![workflow img](/images/workflow.png)
+
 Stage 0 (Blue): Preperation of training data by sourcing for videos and manual trimming
 Stage 1 (Orange): Extraction of features from videos through pose estimation
 Stage 2 (Green): Training of LSTM network for synchronicity estimates
@@ -31,16 +33,16 @@ Run the code in the order of stage 0 - 3. Each notebook should be run in order o
 ### Stage 0: Data preparation
 Download videos and introduction on running openpose along with its features. Lastly, explanation on how to estimate synchronicty between extrema from keypoints from openpose.
 
-#### _0 Video Download:_ 
+#### 0 - Video Download 
 Download videos from youtube into the `videos` folder. Choose an appropriate youtube video with 3 dancers and copy the appropriate ID (e.g. https:/www.youtube.com/watch?v=AXszbHehGB8 where the ID is AXsbHehGB8). Videos downloaded for this project can be found in `videos`. 
 
-#### _0.1 Openpose Estimation:_ 
+#### 0.1 - Openpose Estimation
 Set up the openpose repository for pytorch. This notebook shows how to generate pose estimation for a single image, and includes an example of how openpose is run on a whole video.The output of this stage cuts each video into frames and generates a list of coordinates and scores for each keypoint detected through openpose. The examples generated in this notebook is found under `videos/examples`.
 
-#### _0.2 Openpose Output Analysis:_ 
+#### 0.2 - Openpose Output Analysis
 Display the outputs of openpose. Each frame yields candidate (x, y, score and id) and subset (score and id) for each keypoint.
 
-#### _0.3 Pose Synchronicity Estimation:_ 
+#### 0.3 - Pose Synchronicity Estimation
 Show example synchronicity estimation from peak estimation between the movements of extrema. The per limb estimation of synchronocity is shown. 
 
 ----------------------------
@@ -48,16 +50,16 @@ Show example synchronicity estimation from peak estimation between the movements
 ### Stage 1: Openpose feature extraction  
 Preparation of training data. Features and frames are extracted for 20 frames of each video. 
 
-#### _1 Frame Generation and KP Feature Extraction:_  
+#### 1 - Frame Generation and KP Feature Extraction: 
 Run to divide each video into frames and run openpose on each frame. The features are saved into a npz file.
 
-#### _1.1 Generate synthetic data_
+#### 1.1 - Generate synthetic data
 Generate synthetic data by randomly replicating a random subject for a given video. Replications are given random positions with a set delay.
 
-#### _1.a Dancer Generation_
+#### 1.a - Dancer Generation
 Dancers generated from openpose may be entangled during labling. Dancers are untangled in this process. Outputs of this process is saved in json files under `sync_measure_data`.
 
-#### _1.a1 Extrema-based features extraction_
+#### 1.a1 - Extrema-based features extraction
 Extract extrema based features from all subjects. Outputs of this process is saved in json files under `sync_measure_data`.
 
 ----------------------------
