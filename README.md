@@ -55,10 +55,10 @@ Run to divide each video into frames and run openpose on each frame. The feature
 Generate synthetic data by randomly replicating a random subject for a given video. Replications are given random positions with a set delay.
 
 #### _1.a Dancer Generation_
-Dancers generated from openpose may be entangled during labling. Dancers are untangled in this process.
+Dancers generated from openpose may be entangled during labling. Dancers are untangled in this process. Outputs of this process is saved in json files under `sync_measure_data`.
 
 #### _1.a1 Extrema-based features extraction_
-Extract extrema based features from all subjects. 
+Extract extrema based features from all subjects. Outputs of this process is saved in json files under `sync_measure_data`.
 
 ----------------------------
 
