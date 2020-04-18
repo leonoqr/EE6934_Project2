@@ -20,7 +20,9 @@ The workflow is visualized below and will occur in 3 stages.
 ![workflow img](/images/workflow.png)
 
 Stage 0 (Blue): Preperation of training data by sourcing for videos and manual trimming
+
 Stage 1 (Orange): Extraction of features from videos through pose estimation
+
 Stage 2 (Green): Training of LSTM network for synchronicity estimates
 
 ----------------------------
