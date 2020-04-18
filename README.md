@@ -67,7 +67,7 @@ Extract extrema based features from all subjects. Outputs of this process is sav
 ----------------------------
 
 ### Stage 2: Training the LSTM model
-Here we train the LSTM model using the the data generated in stage 1. Here we display the notebooks train on real data only. We show several variants based on our optimization process to achieve better results. We provide choices in whether synthetic data and/or real data should be use to train the network. Either a regression model should be run, or classification model. For the regression model, the choice of loss can be selected between L1 and MSE loss. Key functions are included in `vidutils.py` and `trainutils.py`. The final weights from the model are saved in `models`.
+Here we train the LSTM model using the the data generated in stage 1. Here we display the notebooks train on real data only. We show several variants based on our optimization process to achieve better results. We provide choices in whether synthetic data and/or real data should be use to train the network. Either a regression model should be run, or classification model. For the regression model, the choice of loss can be selected between L1 and MSE loss. Key functions are included in `vidutils.py` , `trainutils.py`, and `syncutils.py`. The final weights from the model are saved in `models`.
 
 #### 2 - RNN Training with KPF
 Here the keypoint features are entered into an LSTM network and used to predict synchronicity estimates. The final loss and accuracy are visualized.
