@@ -58,7 +58,7 @@ def train_model(model, params):
             test_loss, test_metric = calculate_loss(model, loss_fn, testing_loader)
         
         # If loss is lower, save weights
-        if test_loss < best_loss:
+        if test_loss <= best_loss:
             best_loss = test_loss
             best_model_weights = copy.deepcopy(model.state_dict())
             torch.save(model.state_dict(), weights_path)
