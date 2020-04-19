@@ -166,6 +166,7 @@ def train_model_reg(model, params):
     testing_loader  = params["testing_loader"]
     lr_scheduler = params["lr_scheduler"]
     weights_path = params["weights_path"]
+    cuda_available = params["cuda_available"]
 
     # Create Loss History - for plotting
     loss_history = {
@@ -194,7 +195,7 @@ def train_model_reg(model, params):
 
         # Train the model
         model.train()
-        train_loss, train_metric = calculate_loss_reg(model, loss_fn, training_loader, optimizer)
+        train_loss, train_metric = calculate_loss_reg(model, loss_fn, training_loader, cuda_available, optimizer)
 
         # Append Training Loss and Metrics
         loss_history["train"].append(train_loss)
@@ -203,7 +204,7 @@ def train_model_reg(model, params):
         # Set to eval mode and evaluate
         model.eval()
         with torch.no_grad():
-            test_loss, test_metric = calculate_loss_reg(model, loss_fn, testing_loader)
+            test_loss, test_metric = calculate_loss_reg(model, loss_fn, testing_loader, cuda_available)
         
         # If loss is lower, save weights
         if test_loss < best_loss:
@@ -229,7 +230,7 @@ def train_model_reg(model, params):
     model.load_state_dict(best_model_weights)
     return model, loss_history, metric_history
 
-def calculate_loss_reg(model, loss_fn, dataset_loader, optimizer = None):
+def calculate_loss_reg(model, loss_fn, dataset_loader, cuda_available, optimizer = None):
 
     running_loss = 0.0
     running_metric = 0.0
@@ -245,7 +246,7 @@ def calculate_loss_reg(model, loss_fn, dataset_loader, optimizer = None):
         output = output.squeeze()
         
         # Calculate loss and append
-        loss_b, metric_b = loss_batch_reg(loss_fn, output, y_batch, optimizer)
+        loss_b, metric_b = loss_batch_reg(loss_fn, output, y_batch, cuda_available, optimizer)
         running_loss += loss_b
 
         if metric_b is not None:
@@ -256,20 +257,28 @@ def calculate_loss_reg(model, loss_fn, dataset_loader, optimizer = None):
     return loss, metric
 
 # Compute Loss
-def loss_batch_reg(loss_fn, output, target, opt=None):
+def loss_batch_reg(loss_fn, output, target, cuda_available, opt=None):
 
-    loss = loss_fn(output, target.type(torch.FloatTensor))
+    if cuda_available:
+        loss = loss_fn(output, target.type(torch.cuda.FloatTensor))
+    else:
+        loss = loss_fn(output, target.type(torch.FloatTensor))
 
     with torch.no_grad():
-        metric_b = metrics_batch_reg(output, target)
+        metric_b = metrics_batch_reg(output, target, cuda_available)
     if opt is not None:
         opt.zero_grad()
         loss.backward()
         opt.step()
     return loss.item(), metric_b
 
-def metrics_batch_reg(output, target):
-    pred = output.type(torch.IntTensor)
+def metrics_batch_reg(output, target, cuda_available):
+    
+    if cuda_available:
+        pred = output.type(torch.cuda.IntTensor)
+    else:
+        pred = output.type(torch.IntTensor)
+    
     corrects = pred.eq(target.view_as(pred)).sum().item()
     return corrects
 
@@ -278,12 +287,12 @@ def train_compound_model(model, params):
 
     # Load parameters
     num_epochs   = params["num_epochs"]
-    ce_lossfn      = params["ce_lossfn"] # CrossEntropy
+    loss_fn      = params["loss_fn"] # CrossEntropy
     penalty_weight = params["penalty_weight"] # 5 of ce_lossfn
-    ce_optimizer    = params["ce_optimizer"]
+    optimizer    = params["optimizer"]
     training_loader = params["training_loader"]
     testing_loader  = params["testing_loader"]
-    ce_lr_scheduler = params["ce_lr_scheduler"]
+    lr_scheduler = params["lr_scheduler"]
     weights_path = params["weights_path"]
 
     # Create Loss History - for plotting
@@ -306,14 +315,15 @@ def train_compound_model(model, params):
     for epoch in range(num_epochs):
 
         # Get learning rate
-        current_ce_lr = get_lr(ce_optimizer)
+        current_ce_lr = get_lr(optimizer)
 
         # Print Stats
         print('Epoch {}/{}, current_lr={}'.format(epoch, num_epochs - 1, current_ce_lr))
 
         # Train the model
         model.train()
-        train_loss, train_metric = calculate_compound_loss(model, ce_lossfn, training_loader, penalty_weight, ce_optimizer)
+        #train_loss, train_metric = calculate_compound_loss(model, ce_lossfn, training_loader, penalty_weight, ce_optimizer)
+        train_loss, train_metric = calculate_weighted_loss(model, loss_fn, training_loader, penalty_weight, optimizer)
 
         # Append Training Loss and Metrics
         loss_history["train"].append(train_loss)
@@ -322,7 +332,7 @@ def train_compound_model(model, params):
         # Set to eval mode and evaluate
         model.eval()
         with torch.no_grad():
-            test_loss, test_metric = calculate_compound_loss(model, ce_lossfn, testing_loader, penalty_weight)
+            test_loss, test_metric = calculate_weighted_loss(model, loss_fn, testing_loader, penalty_weight)
         
         # If loss is lower, save weights
         if test_loss <= best_loss:
@@ -336,8 +346,8 @@ def train_compound_model(model, params):
         metric_history["test"].append(test_metric)
 
         # Update Learning Rate
-        ce_lr_scheduler.step(test_loss)
-        if current_ce_lr != get_lr(ce_optimizer): 
+        lr_scheduler.step(test_loss)
+        if current_ce_lr != get_lr(optimizer): 
             print("Loading best model weights")
             model.load_state_dict(best_model_weights)
         
@@ -348,18 +358,7 @@ def train_compound_model(model, params):
     model.load_state_dict(best_model_weights)
     return model, loss_history, metric_history
 
-def calculate_compound_loss(model, ce_lossfn, data_loader, penalty_weight, ce_optimizer=None):
-
-    # Calculate Individual Loss
-    ce_loss, ce_metric = calculate_ce_loss(model, ce_lossfn, data_loader, penalty_weight, ce_optimizer)
-
-    # Combine losses 
-    total_loss = ce_loss #*loss_weight + mse_loss*(1-loss_weight)
-    total_metric = ce_metric #*loss_weight + mse_metric*(1-loss_weight)
-
-    return total_loss, total_metric
-
-def calculate_ce_loss(model, loss_fn, dataset_loader, penalty_weight, optimizer = None):
+def calculate_weighted_loss(model, loss_fn, dataset_loader, penalty_weight, optimizer = None):
 
     running_loss = 0.0
     running_metric = 0.0
@@ -416,8 +415,10 @@ def metrics_batch_ce(output, target):
 
 def penalty_batch_ce(output, target):
     prediction = output.argmax(dim=1, keepdim=True)
+    
     #Subtract from actual class - L1 
     diff = (prediction - target.view_as(prediction)).abs().double().mean().item() 
+    
     #Subtract from actual class - L2 
     #diff = (prediction - target.view_as(prediction)).pow(2).double().mean().item() 
     
