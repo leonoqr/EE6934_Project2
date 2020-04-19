@@ -69,16 +69,16 @@ Extract extrema based features from all subjects. Outputs of this process is sav
 ### Stage 2: Training the LSTM model
 Here we train the LSTM model using the the data generated in stage 1. Here we display the notebooks train on real data only. We show several variants based on our optimization process to achieve better results. We provide choices in whether synthetic data and/or real data should be use to train the network. Either a regression model should be run, or classification model. For the regression model, the choice of loss can be selected between L1 and MSE loss. Key functions are included in `vidutils.py` , `trainutils.py`, and `syncutils.py`. The final weights from the model are saved in `models`.
 
-#### 2 - RNN Training with KPF
+#### 2 - KPF Model Training
 Here the keypoint features are entered into an LSTM network and used to predict synchronicity estimates. The final loss and accuracy are visualized.
 
-#### 2.1 - RNN Training with Normalized KPF
+#### 2.1 - Normalized KPF Model Training
 Here each keypoint feature is normalized over the training set before being entered into an LSTM network and used to predict synchronicity estimates. The final loss and accuracy are visualized.
 
-#### 2.2 - RNN Training with Normalized KPF and Penalty
+#### 2.2 - Normalized KPF Classifier with Penalty Training
 Here each keypoint feature is normalized over the training set before being entered into an LSTM network and used to predict synchronicity estimates. An additional penalty function is included to encourage the predictions to be close to each other (e.g. choosing the class of delay of 100ms when the true delay is 300ms will be penalised more heavily than choosing a delay of 200ms). The final loss and accuracy are visualized.
 
-#### 2.a - RNN Training with EBF
+#### 2.a - EBF Classifier Training
 Here, extrema based features are used instead of keypoint features. The final loss and accuracy are visualized.
 
 ----------------------------
@@ -86,16 +86,16 @@ Here, extrema based features are used instead of keypoint features. The final lo
 ### Stage 3: Analysing results of model
 The models generated from stage 2 are analysed in order to visualize the accuracy and the spread of true values versus predictions. This is done for both the training set and test set. 
 
-#### 3 - Results for RNN with KPF
+#### 3 - KPF Results
 Load weights and visualize accuracies and distribution of results for final model in stage 2.
 
-#### 3.1 - Results for RNN with Normalized KPF
+#### 3.1 - Normalized KPF Results
 Load weights and visualize accuracies and distribution of results for final model in stage 2.1.
 
-#### 3.2 - Results for RNN with Normalized KPF and Penalty
+#### 3.2 - Normalized KPT with Penalty Results
 Load weights and visualize accuracies and distribution of results for final model in stage 2.2.
 
-#### 3a - Results for RNN with EBF
+#### 3a - EBF Classifier Results
 Load weights and visualize accuracies and distribution of results for final model in stage 2a.
 
 ----------------------------
